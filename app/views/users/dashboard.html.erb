@@ -1,0 +1,192 @@
+<script>
+//update dash
+function updateDOM(data, elementClass){
+	var el = $(elementClass);
+	//check if it's on screen but not in list
+	//delete if true
+	for(var i = 0; i < el.children().length; i++){
+		var isElementThere = false;
+		for(var j = 0; j < data.length; j++){
+			//different types
+					if(el.children().eq(i).children().eq(0).text().indexOf(data[j].email) != -1){
+						//it'sthere
+						isElementThere = true;
+						break;
+
+				}
+			}
+			if(!isElementThere){
+				//delete from DOM
+				el.children().eq(i).remove()
+				//should there be i-- or something?
+				//probably
+				i--;
+			}
+		}
+
+		//check if it's in data but not on screen
+		//add if true
+		var toAdd = [];
+		for(var i = 0; i < data.length; i++){
+			var isElementThere = false;
+			for(var j = 0; j < el.children().length; j++){
+				//different types
+
+						if(el.children().eq(j).children().eq(0).text().indexOf(data[i].email) != -1){
+							//it's there
+							isElementThere = true;
+							break;
+
+					}
+				}
+				if(!isElementThere){
+					toAdd.push(data[i]);
+				}
+			}
+			//avoid unnecessary additional parsing
+			//e.g., don't add the data right above and then parse it still as part of the loop
+			for(var i = 0; i< toAdd.length; i++){
+				if(elementClass==".busy"){
+				if(toAdd[i].tutee_name !=null){
+				el.append(
+                                        "<div class='tutor'>"
+																				+"<p>"
+																				+toAdd[i].name+"<br>" +toAdd[i].email +"<br>"
+																				+toAdd[i].tutee_name+"::"+toAdd[i].tutee_subject
+																				+"</p>"
+																				+"<img alt='Avatar' src='"+toAdd[i].image
+																				+"'></div>"
+                                );
+					}
+					else{
+						el.append(
+							"<div class='tutor'>"
+							+"<p>"
+							+toAdd[i].name+"<br>" +toAdd[i].email
+							+"</p>"
+							+"<img alt='Avatar' src='"+toAdd[i].image
+							+"'></div>"
+						);
+					}
+				}
+				else{
+				el.append(
+					"<div class='tutor'><p>"
+					+toAdd[i].name+"<br>" +toAdd[i].email +
+					"</p>"+
+					"<img alt='Avatar' src='"+toAdd[i].image+"'></div>"
+				);
+				}
+			}
+}
+
+function updateRequests(data){
+	for(var i = 0; i < $('.requested').children().length; i++){
+		var isElementThere = false;
+		for(var j = 0; j < data.length; j++){
+			if($('.requested').children().eq(i).children().eq(0).text() == data[j].name + "::" + data[j].subject){
+				isElementThere = true;
+				break;
+			}
+
+		}
+		if(!isElementThere){
+			$('.requested').children().eq(i).remove();
+			i--;
+		}
+
+	}
+//shouldn't actually need to add requests through ajax... maybe 2 teachers using at same time?
+var toAdd = [];
+	for(var i = 0; i < data.length; i++){
+		var isElementThere = false;
+		for(var j = 0; j < $('.requested').children().length; j++){
+			if($('.requested').children().eq(j).children().eq(0).text() == data[i].name + "::" + data[i].subject){
+				isElementThere = true;
+			}
+
+		}
+		if(!isElementThere){
+			toAdd.push(data[i]);
+		}
+
+	}
+	for(var i = 0; i < toAdd.length; i++){
+		$('.requested').append("<div class='request'>"+toAdd[i].name+"::"+toAdd[i].subject+"</div>");
+
+	}
+}
+
+function ajaxUpdate(){
+	$.post("/update", {secret_key:"<%=ENV["REQUEST_KEY"]%>"}).done(function(data){
+		var selectors = [".available", ".busy"]
+		updateDOM(data[0], selectors[0]);
+		updateDOM(data[1], selectors[1]);
+		updateRequests(data[2]);
+
+		})
+
+
+	}
+
+
+
+function newPeriodClicked(){
+	$.post("/new_period", {secret_key:"<%=ENV["REQUEST_KEY"]%>"});
+}
+$(document).ready(function(){
+	setTimeout(setInterval(ajaxUpdate,1000),1000);
+	//don't call it right after load, data is already there
+});
+</script>
+<h6 onclick="$.post('/admin_logout').done(function(){window.location.reload()});">Log out</h6>
+<p><%= @message %></p>
+<form onsubmit="
+var s = $('#subject').val();
+var n = $('#name').val();
+$.post('/tutor_request',{subject:s,name:n});
+$('.requested').append('<div class=\'request\'>'+n+'::'+s+'</div>');
+$('#subject').val('');
+$('#name').val('');
+return false;">
+
+	<input class="tutee-info" type="text" name="name" id="name" hint="Tutee name">
+	<br>
+	<input class="tutee-info" type="text" name="subject" id="subject" hint="Subject">
+	<br><br>
+	<input type="submit" value="Submit">
+</form>
+<button onclick="newPeriodClicked()">New Class Period</button>
+<h3 class="roboto">Available Tutors</h3>
+<div class="container">
+<div class="available group">
+<% @users.where(tutoring:false).each do |user| %>
+<div class="tutor">
+	<p><%= user.name %><br><%= user.email %></p>
+	 <img alt="Avatar" src=<%= user.image %> />
+	<!--User image url has a default with Google OAuth !-->
+</div>
+<% end %>
+</div>
+
+<div class="requested group">
+        <% TutorRequest.all.each do |tr| %>
+        <div class="request">
+                <%=tr.name + "::" + tr.subject %>
+        </div>
+        <%end%>
+</div>
+
+<div class="busy group">
+<% @users.where(tutoring:true).each do |user| %>
+<div class="tutor">
+<% if user.tutee_name && user.tutee_subject %>
+<%= user.tutee_name + "::" + user.tutee_subject %>
+<%end%>
+        <p><%= user.name %> <br> <%= user.email %></p>
+         <img alt="Avatar" src=<%= user.image %> />
+</div>
+<% end %>
+</div>
+
+</div>

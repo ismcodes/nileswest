@@ -1,0 +1,46 @@
+// Place all the styles related to the users controller here.
+// They will automatically be included in application.css.
+// You can use Sass (SCSS) here: http://sass-lang.com/
+.tutor{
+width:60%;
+border-radius:2px;
+font-family:'Lato';
+background-color:rgba(236, 240, 241,0.45);
+margin:auto;
+margin-top:4px;
+}
+.tutor:last-child{
+margin-bottom:16px;
+}
+.roboto{
+font-family:'Roboto';
+}
+.available{
+background-color:#2ecc71;
+}
+.busy{
+background-color:#e74c3c;
+}
+.container{
+height:85%;
+}
+.tutor p{
+display: inline-block;
+margin-right: 15%;
+}
+.group{
+width: 430px;
+display: table-cell;
+}
+.requested{
+background-color: #f1c40f;
+}
+input.tutee-info{
+  background-color: #b1c0cf;
+  border: 0;
+  border-radius: 5px;
+  box-shadow: 0 0 30px #7f8c8d;
+}
+// body{
+//   background-color: ;
+// }
